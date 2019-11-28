@@ -1,0 +1,106 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  labels:
+    app: gollum
+  name: gollum
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "4Gi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gollum
+  labels:
+    app: gollum
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: gollum
+  selector:
+    app: gollum
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: gollum
+  name: gollum
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gollum
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gollum
+    spec:
+      containers:
+        - name: gollum
+          image: "adtac/gollum-alpine:latest"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+          resources:
+            limits:
+              cpu: 100m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+
+          volumeMounts:
+            - mountPath: /wiki
+              name: storage
+              readOnly: false
+      securityContext:
+        fsGroup: 1000
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: gollum
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gollum
+  labels:
+    app: gollum
+  annotations:
+spec:
+  rules:
+    - host: wiki.localhost
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: gollum
+              servicePort: 8080
+  tls:
+    - hosts:
+      - wiki.localhost
+
