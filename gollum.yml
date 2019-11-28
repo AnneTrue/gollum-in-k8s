@@ -91,6 +91,7 @@ metadata:
   labels:
     app: gollum
   annotations:
+    ingress.kubernetes.io/force-ssl-redirect: true
 spec:
   rules:
     - host: wiki.localhost
