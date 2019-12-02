@@ -50,7 +50,7 @@ spec:
     spec:
       containers:
         - name: gollum
-          image: "adtac/gollum-alpine:latest"
+          image: "antrue/gollum-alpine:4.1.4"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
